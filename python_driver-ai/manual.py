@@ -20,6 +20,7 @@ class Car(pygame.sprite.Sprite):
         
         self.rect = self.image.get_rect(center=(490, 820))
         self.drive_state = False
+        self.reverse = False
         self.vel_vector = pygame.math.Vector2(0.8, 0)
         self.angle = 0
         self.rotation_vel = 5
@@ -39,7 +40,10 @@ class Car(pygame.sprite.Sprite):
     # Drive forward if drive state = True by vector amount
     def drive(self):
         if self.drive_state:
-            self.rect.center += self.vel_vector * 6
+            if self.reverse:
+                self.rect.center -= self.vel_vector * 6
+            elif not self.reverse:
+                self.rect.center += self.vel_vector * 6
 
     
     # Turn vehicle
@@ -111,10 +115,15 @@ def eval_genomes():
         # User controls
         if user_input[pygame.K_w]:
             car.sprite.drive_state = True
+            car.sprite.reverse = False
+        elif user_input[pygame.K_s]:
+            car.sprite.drive_state = True
+            car.sprite.reverse = True
         if user_input[pygame.K_a]:
             car.sprite.direction = -1
         elif user_input[pygame.K_d]:
             car.sprite.direction = 1
+        
 
         # Update
         car.draw(SCREEN)

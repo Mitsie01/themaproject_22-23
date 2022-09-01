@@ -9,7 +9,7 @@ SCREEN_WIDTH = 1485
 SCREEN_HEIGHT = 1016
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-TRACK = pygame.image.load(os.path.join("img", "track3.png"))
+TRACK = pygame.image.load(os.path.join("img", "track2.png"))
 
 class Car(pygame.sprite.Sprite):
     def __init__(self):
@@ -22,6 +22,8 @@ class Car(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(490, 820))
         self.vel_vector = pygame.math.Vector2(0.8, 0)
         self.angle = 0
+        self.drivestate = True
+        self.reverse = False
         self.rotation_vel = 5
         self.direction = 0
         self.alive = True
@@ -34,14 +36,18 @@ class Car(pygame.sprite.Sprite):
         self.drive()
         self.rotate()
         # set specific radar angles
-        for radar_angle in (-60, -30, 0, 30, 60):
+        for radar_angle in (-135, -45, 0, 45, 135):
             self.radar(radar_angle)
         self.collision()
         self.data()
     
     # Drive forward if drive state = True by vector amount
     def drive(self):
-        self.rect.center += self.vel_vector * 6
+        if self.drivestate:
+            if self.reverse:
+                self.rect.center -= self.vel_vector * 6
+            if not self.reverse:
+                self.rect.center += self.vel_vector * 6
 
     
     # Turn vehicle
@@ -59,29 +65,38 @@ class Car(pygame.sprite.Sprite):
 
     def collision(self):
         length = 40
-        collision_point_right = [int(self.rect.center[0] + math.cos(math.radians(self.angle + 18)) * length),
+        collision_point_rightf = [int(self.rect.center[0] + math.cos(math.radians(self.angle + 18)) * length),
                                  int(self.rect.center[1] - math.sin(math.radians(self.angle + 18)) * length)]
-        collision_point_left = [int(self.rect.center[0] + math.cos(math.radians(self.angle - 18)) * length),
+        collision_point_leftf = [int(self.rect.center[0] + math.cos(math.radians(self.angle - 18)) * length),
                                 int(self.rect.center[1] - math.sin(math.radians(self.angle - 18)) * length)]
+        collision_point_rightr = [int(self.rect.center[0] + math.cos(math.radians(self.angle + 162)) * length),
+                                 int(self.rect.center[1] - math.sin(math.radians(self.angle + 162)) * length)]
+        collision_point_leftr = [int(self.rect.center[0] + math.cos(math.radians(self.angle - 162)) * length),
+                                int(self.rect.center[1] - math.sin(math.radians(self.angle - 162)) * length)]
 
         # stop at collision
-        if SCREEN.get_at(collision_point_right) == pygame.Color(2, 105, 31, 255) or SCREEN.get_at(collision_point_left) == pygame.Color(2, 105, 31, 255):
+        if SCREEN.get_at(collision_point_rightf) == pygame.Color(2, 105, 31, 255) or SCREEN.get_at(collision_point_leftf) == pygame.Color(2, 105, 31, 255) \
+        or SCREEN.get_at(collision_point_rightr) == pygame.Color(2, 105, 31, 255) or SCREEN.get_at(collision_point_leftr) == pygame.Color(2, 105, 31, 255):
            self.alive = False
 
         # draw collision point
-        pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_right, 4)
-        pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_left, 4)
-
+        pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_rightf, 4)
+        pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_leftf, 4)
+        pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_rightr, 4)
+        pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_leftr, 4)
 
     def radar(self, radar_angle):
         length = 0
         x = int(self.rect.center[0])
         y = int(self.rect.center[1])
 
-        while not SCREEN.get_at((x, y)) == pygame.Color(2, 105, 31, 255) and length < 200:
-            length += 1
-            x = int(self.rect.center[0] + math.cos(math.radians(self.angle + radar_angle)) * length)
-            y = int(self.rect.center[1] - math.sin(math.radians(self.angle + radar_angle)) * length)
+        try:
+            while not SCREEN.get_at((x, y)) == pygame.Color(2, 105, 31, 255) and length < 200:
+                length += 1
+                x = int(self.rect.center[0] + math.cos(math.radians(self.angle + radar_angle)) * length)
+                y = int(self.rect.center[1] - math.sin(math.radians(self.angle + radar_angle)) * length)
+        except:
+            pass
 
         # Draw radar
         pygame.draw.line(SCREEN, (255, 255, 255, 255), self.rect.center, (x, y), 1)
@@ -141,12 +156,36 @@ def eval_genomes(genomes, config):
 
         for i, car in enumerate(cars):
             output = nets[i].activate(car.sprite.data())
-            if output[0] > 0.7:
+            if output[0] > 0.7 and output[2] > 0.7:
                 car.sprite.direction = 1
-            if output[1] > 0.7:
+                car.sprite.reverse = True
+                car.sprite.drivestate = True
+            if output[1] > 0.7 and output[2] > 0.7:
                 car.sprite.direction = -1
-            if output[0] <= 0.7 and output[1] <= 0.7:
+                car.sprite.reverse = True
+                car.sprite.drivestate = True
+            if output[0] <= 0.7 and output[1] <= 0.7 and output[2] > 0.7:
                 car.sprite.direction = 0
+                car.sprite.reverse = True
+                car.sprite.drivestate = True
+            if output[0] > 0.7 and output[3] > 0.7:
+                car.sprite.direction = 1
+                car.sprite.reverse = False
+                car.sprite.drivestate = True
+            if output[1] > 0.7 and output[3] > 0.7:
+                car.sprite.direction = -1
+                car.sprite.reverse = False
+                car.sprite.drivestate = True
+            if output[0] <= 0.7 and output[1] <= 0.7 and output[3] > 0.7:
+                car.sprite.direction = 0
+                car.sprite.reverse = False
+                car.sprite.drivestate = True
+            if output[0] > 0.7 and output[2] <= 0.7 and output[3] <= 0.7:
+                car.sprite.direction = 1
+                car.sprite.drivestate = False
+            if output[1] > 0.7 and output[2] <= 0.7 and output[3] <= 0.7:
+                car.sprite.direction = -1
+                car.sprite.drivestate = False
 
 
         # Update
