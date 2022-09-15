@@ -1,7 +1,5 @@
 from machine import Pin, I2C
 import utime
-from bme680 import *
-
 
 
 led = Pin(2, Pin.OUT)
@@ -19,7 +17,7 @@ except:
         file.write('\n')
         file.close()
 
-INTERVAL = 60
+INTERVAL = 1
 c = 343
 
 
@@ -72,7 +70,7 @@ def web_page(INTERVAL):
     <div class="content">
         <div class="cards">
             <div class="card">
-                <p><i class="fas fa-ruler fa-2x" style="color:#da0a0a;"></i><span class="symbol"> Distance</span></p><p><span class="value"><span id="temp">""" + str(distance) + """</span> cm</span></p>
+                <p><i class="fas fa-ruler fa-2x" style="color:#da0a0a;"></i><span class="symbol"> Distance</span></p><p><span class="value"><span id="temp">""" + str(int(distance)) + """</span> cm</span></p>
             </div>
         </div>
     </div>
