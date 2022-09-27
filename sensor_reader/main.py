@@ -42,8 +42,13 @@ def pulse(c):
     return distance
 
 
-def web_page(INTERVAL):
-    distance = pulse(c)
+def web_page(INTERVAL, state):
+    if state:
+        distance = pulse(c)
+    elif not state:
+        distance = 'Sensor off'
+    else:
+        distance = 'Sensor failure'
     html = """<html>
 <head>
     <meta http-equiv="refresh" content=""" + str(INTERVAL) + """>
@@ -70,8 +75,13 @@ def web_page(INTERVAL):
     <div class="content">
         <div class="cards">
             <div class="card">
-                <p><i class="fas fa-ruler fa-2x" style="color:#da0a0a;"></i><span class="symbol"> Distance</span></p><p><span class="value"><span id="temp">""" + str(int(distance)) + """</span> cm</span></p>
+                <p><i class="fas fa-ruler fa-2x" style="color:#da0a0a;"></i><span class="symbol"> Distance</span></p><p><span class="value"><span id="temp">""" + str(distance) + """</span> cm</span></p>
             </div>
+        </div>
+        <br>
+        <div>
+            <p><a href="/?pulse=on"><button class="button">Sensor on</button></a></p>
+            <p><a href="/?pulse=off"><button class="button button2">Sensor off</button></a></p>
         </div>
     </div>
 </body>
@@ -95,7 +105,17 @@ while True:
         conn.settimeout(None)
         request = str(request)
         #print('Content = %s' % request)
-        response = web_page(INTERVAL)
+        sensor_on = request.find('/?pulse=on')
+        print(sensor_on)
+        sensor_off = request.find('/?pulse=off')
+        print(sensor_off)
+        if sensor_on == 6:
+            state = True
+        elif sensor_off == 6:
+            state = False
+        else:
+            state = True
+        response = web_page(INTERVAL, state)
         conn.send('HTTP/1.1 200 OK\n')
         conn.send('Content-Type: text/html\n')
         conn.send('Connection: close\n\n')
