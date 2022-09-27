@@ -8,15 +8,6 @@ led.value(True)
 trigger = Pin(12, Pin.OUT)
 echo = Pin(14, Pin.IN)
 
-try:
-    with open("weatherdata.csv","r") as file:
-        file.close()
-except:
-    with open('weatherdata.csv', 'w') as file:
-        file.write('Temperature, Humidity, Pressure')
-        file.write('\n')
-        file.close()
-
 INTERVAL = 1
 c = 343
 
@@ -35,20 +26,26 @@ def pulse(c):
     dt = t_receive - t_send
     if dt > 0 and dt < 17000:
         distance = (dt * (c/10000)) / 2
-        #print(distance,"cm")
     else:
-        print("Object out of range")
+        distance = 'Out of range'
 
     return distance
 
 
 def web_page(INTERVAL, state):
     if state:
-        distance = pulse(c)
+        try:
+            distance = int(pulse(c))
+            unit = ' cm'
+        except:
+            distance = pulse(c)
+            unit = ''
     elif not state:
         distance = 'Sensor off'
+        unit = ''
     else:
         distance = 'Sensor failure'
+        unit = ''
     html = """<html>
 <head>
     <meta http-equiv="refresh" content=""" + str(INTERVAL) + """>
@@ -66,6 +63,7 @@ def web_page(INTERVAL, state):
         .cards { max-width: 1000px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
         .value { font-size: 3rem; }
         .symbol { font-size: 2rem; }
+        .button { background-color: #da0a0a; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; cursor: pointer;}
     </style>
 </head>
 <body>
@@ -75,13 +73,13 @@ def web_page(INTERVAL, state):
     <div class="content">
         <div class="cards">
             <div class="card">
-                <p><i class="fas fa-ruler fa-2x" style="color:#da0a0a;"></i><span class="symbol"> Distance</span></p><p><span class="value"><span id="temp">""" + str(distance) + """</span> cm</span></p>
+                <p><i class="fas fa-ruler fa-2x" style="color:#da0a0a;"></i><span class="symbol"> Distance</span></p><p><span class="value"><span id="temp">""" + str(distance) + """</span>""" + unit + """</span></p>
             </div>
         </div>
         <br>
         <div>
             <p><a href="/?pulse=on"><button class="button">Sensor on</button></a></p>
-            <p><a href="/?pulse=off"><button class="button button2">Sensor off</button></a></p>
+            <p><a href="/?pulse=off"><button class="button">Sensor off</button></a></p>
         </div>
     </div>
 </body>
@@ -100,15 +98,11 @@ while True:
             gc.collect()
         conn, addr = s.accept()
         conn.settimeout(3.0)
-        #print('Got a connection from %s' % str(addr))
         request = conn.recv(1024)
         conn.settimeout(None)
         request = str(request)
-        #print('Content = %s' % request)
         sensor_on = request.find('/?pulse=on')
-        print(sensor_on)
         sensor_off = request.find('/?pulse=off')
-        print(sensor_off)
         if sensor_on == 6:
             state = True
         elif sensor_off == 6:
@@ -123,4 +117,4 @@ while True:
         conn.close()
     except OSError as e:
         conn.close()
-        #print('Connection closed')
+        print('Connection closed')
