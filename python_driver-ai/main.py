@@ -9,7 +9,9 @@ SCREEN_WIDTH = 1485
 SCREEN_HEIGHT = 1016
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-TRACK = pygame.image.load(os.path.join("img", "track2.png"))
+TRACK = pygame.image.load(os.path.join("img", "track5.png"))
+
+marker = False
 
 class Car(pygame.sprite.Sprite):
     def __init__(self):
@@ -28,6 +30,8 @@ class Car(pygame.sprite.Sprite):
         self.direction = 0
         self.alive = True
         self.radars = []
+        self.marker = False
+        self.found = False
 
     
     # Update car position
@@ -74,10 +78,19 @@ class Car(pygame.sprite.Sprite):
         collision_point_leftr = [int(self.rect.center[0] + math.cos(math.radians(self.angle - 162)) * length),
                                 int(self.rect.center[1] - math.sin(math.radians(self.angle - 162)) * length)]
 
+
         # stop at collision
         if SCREEN.get_at(collision_point_rightf) == pygame.Color(2, 105, 31, 255) or SCREEN.get_at(collision_point_leftf) == pygame.Color(2, 105, 31, 255) \
         or SCREEN.get_at(collision_point_rightr) == pygame.Color(2, 105, 31, 255) or SCREEN.get_at(collision_point_leftr) == pygame.Color(2, 105, 31, 255):
            self.alive = False
+        elif SCREEN.get_at(collision_point_rightf) == pygame.Color(255, 127, 39, 255) or SCREEN.get_at(collision_point_leftf) == pygame.Color(255, 127, 39, 255) \
+        or SCREEN.get_at(collision_point_rightr) == pygame.Color(255, 127, 39, 255) or SCREEN.get_at(collision_point_leftr) == pygame.Color(255, 127, 39, 255):
+            if self.found == False:
+                self.found = True
+                self.marker = True
+                print('found')
+            else:
+                self.marker = False
 
         # draw collision point
         pygame.draw.circle(SCREEN, (0, 255, 255, 0), collision_point_rightf, 4)
@@ -137,7 +150,10 @@ def eval_genomes(genomes, config):
 
 
     run = True
+    t = 0
     while run:
+        t = t + 1
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -150,8 +166,15 @@ def eval_genomes(genomes, config):
             break
 
         for i, car in enumerate(cars):
-            ge[i].fitness += 1
-            if not car.sprite.alive:
+            ge[i].fitness += 1//(0.1*t)
+            
+            if car.sprite.drivestate == True and car.sprite.reverse == False:
+                ge[i].fitness += 0
+            
+            if car.sprite.marker:
+                ge[i].fitness += 100
+                print(f"points given to {i}")
+            if not car.sprite.alive or t >= 10**3:
                 remove(i)
 
         for i, car in enumerate(cars):
