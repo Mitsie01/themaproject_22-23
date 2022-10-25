@@ -22,15 +22,35 @@ utime.sleep(1)
 delay_us = 2500
 state = False
 
+def to_delay(RPM):
+    delay_us = int((10**6)/((RPM/60)*400))
+    return delay_us
+    
 
-def step(delay_us, duration):
+
+def step(delay_us):
+    PUL.value(True)
+    utime.sleep_us(delay_us)
+    PUL.value(False)
+    utime.sleep_us(delay_us)
+
+
+def build(delay_us):
+    start = 2500
+    t0 = time.time_ns()
+    while start < delay_us:
+        step(start)
+        start += (time.time_ns() - t0)/(5*10**7)
+
+
+
+
+def drive(delay_us, duration):
+    build(delay_us)
     dt = 0
     t0 = time.time_ns()
     while dt <= duration*10**9:
-        PUL.value(True)
-        utime.sleep_us(delay_us)
-        PUL.value(False)
-        utime.sleep_us(delay_us)
+        step(delay_us)
         dt = time.time_ns() - t0
 
 
