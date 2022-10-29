@@ -10,14 +10,13 @@ PUL = Pin(12, Pin.OUT)          #D6
 DIR = Pin(14, Pin.OUT)          #D5
 ENA = Pin(13, Pin.OUT)          #D7
 
-ENA.value(True)
-
 led.value(False)
 utime.sleep(1)
 led.value(True)
 ENA.value(False)
-DIR.value(True)
 utime.sleep(1)
+
+stop = False
 
 
 def to_delay(RPM):
@@ -36,10 +35,9 @@ def step(delay_us):
 def build(delay_us):
     start = 2500
     t0 = time.time_ns()
-    while start < delay_us:
+    while start > delay_us:
         step(start)
-        start += (time.time_ns() - t0)/(5*10**7)
-
+        start -= int((time.time_ns() - t0)*(1*10**-7))
 
 
 
@@ -56,8 +54,8 @@ def drive(delay_us, duration):
 
 
 
-while True:
-    try:
+while stop == False:
+    try:       
         speed = int(input("Set RPM: "))
         tspan = int(input("Set Time: "))
         dir = input("Set direction (R/L): ")
@@ -70,6 +68,15 @@ while True:
             raise Exception("Please type R or L.")
 
         delay_us = to_delay(speed)
+        ENA.value(False)
         drive(delay_us, tspan)
+        ENA.value(True)
+        stop = input("Continue? (Y/n): ")
+        if stop.upper() == "Y" or stop == "":
+            stop = False
+        elif stop.upper() == "N":
+            stop = True
+        else:
+            raise Exception("Please type Y or N.")
     except:
         print("An error has occurred. Please check your input statements and try again.")
