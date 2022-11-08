@@ -21,8 +21,8 @@ ENA.value(False)
 utime.sleep(1)
 
 
-def to_delay(RPM):
-    delay_us = int((10**6)/((RPM/60)*400))
+def to_delay(RPM, setting):
+    delay_us = int((10**6)/((RPM/60)*(setting*2)))
     return delay_us
     
 
@@ -35,11 +35,11 @@ def step(delay_us):
 
 def build(delay_us):
     print("[ starting ] Starting buildup procedure.")
-    start = 2500
+    delay_build = 10*(10**3)
     t0 = time.time_ns()
-    while start > delay_us:
-        step(start)
-        start -= int((time.time_ns() - t0)*(1*10**-7))
+    while delay_build > delay_us:
+        step(delay_build)
+        delay_build -= int((time.time_ns() - t0)*(1*10**-7))
 
 
 def drive(delay_us, duration):
@@ -63,6 +63,7 @@ while True:
         proceed = False
         speed = int(input("Set RPM: "))
         tspan = int(input("Set Time: "))
+        setting = int(input("Steps per revolution: "))
         while not proceed:
             dir = input("Set direction (R/L): ")
 
@@ -77,7 +78,7 @@ while True:
 [ error ] Please choose between R or L.
 ''')
 
-        delay_us = to_delay(speed)
+        delay_us = to_delay(speed, setting)
         print("[ starting ] Enabling motor drive.")
         ENA.value(False)
         print("[    ok    ] Motor drive enabled.")
@@ -106,6 +107,26 @@ Continue? (Y/n): ''')
             break
 
     except:
+        proceed = False
+
         print('''
 [ error ] Please check your input variables.
 ''')
+
+        while not proceed:
+            stop = input('''
+Continue? (Y/n): ''')
+            if stop.upper() == "Y" or stop == "":
+                proceed = True
+                stop = False
+            elif stop.upper() == "N":
+                print("[    ok    ] Shutdown initiated.")
+                proceed = True
+                stop = True
+            else:
+                print('''
+[ error ] Please choose y or n.
+''')
+
+        if stop:
+            break
